@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - Stock Sentiment Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f5d4;
+            --secondary: #7209b7;
+            --dark: #1a1b1e;
+            --darker: #141517;
+            --light: #ffffff;
+            --gray: #bfc9d1;
+            --success: #00f5d4;
+            --danger: #ff4d6d;
+            --card-bg: rgba(36, 39, 46, 0.95);
+            --card-border: rgba(255, 255, 255, 0.15);
+            --highlight: #fffbe6;
+        }
+        
+        body {
+            background: var(--darker);
+            color: var(--light);
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(0, 245, 212, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(114, 9, 183, 0.12) 0%, transparent 50%);
+        }
+        
+        .sidebar {
+            background: var(--dark);
+            border-right: 1px solid var(--card-border);
+            height: 100vh;
+            position: fixed;
+            width: 280px;
+            padding: 2rem;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 245, 212, 0.1);
+            border-color: var(--primary);
+        }
+        
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--card-border);
+            padding: 1.5rem;
+        }
+        
+        .table {
+            color: var(--light);
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            font-weight: 600;
+            color: var(--gray);
+            border-bottom: 1px solid var(--card-border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            padding: 1.5rem 1rem;
+        }
+        
+        .table td {
+            border-bottom: 1px solid var(--card-border);
+            vertical-align: middle;
+            padding: 1.5rem 1rem;
+        }
+        
+        .positive {
+            color: var(--success);
+        }
+        
+        .negative {
+            color: var(--danger);
+        }
+        
+        .nav-link {
+            color: var(--gray);
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--light);
+            background: linear-gradient(135deg, rgba(0, 245, 212, 0.1), rgba(114, 9, 183, 0.1));
+            transform: translateX(5px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 245, 212, 0.2);
+        }
+        
+        .btn-outline-light {
+            border: 2px solid var(--card-border);
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .btn-outline-light:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .trend-up {
+            background: rgba(0, 245, 212, 0.1);
+            color: var(--success);
+        }
+        
+        .trend-down {
+            background: rgba(255, 77, 109, 0.1);
+            color: var(--danger);
+        }
+        
+        .portfolio-value {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            margin-right: 0.5rem;
+            transition: all 0.3s ease;
+            border: 2px solid var(--card-border);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 245, 212, 0.2);
+        }
+        
+        .stock-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: var(--light);
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 245, 212, 0.3);
+        }
+        
+        .holding-row {
+            transition: all 0.3s ease;
+        }
+        
+        .holding-row:hover {
+            background: rgba(0, 245, 212, 0.05);
+        }
+        
+        .summary-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            opacity: 0.1;
+            z-index: 0;
+        }
+        
+        .summary-card .card-body {
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+        }
+        
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid var(--card-border);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--light);
+            border: none;
+        }
+        
+        .filter-btn:not(.active):hover {
+            background: rgba(0, 245, 212, 0.1);
+            border-color: var(--primary);
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .page-subtitle {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card, .sidebar {
+            color: var(--light);
+        }
+        
+        .card-header, .table th, .page-title, .portfolio-value, .trend-indicator, .filter-btn, .btn, .nav-link {
+            color: var(--light) !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+        
+        .table td, .text-muted {
+            color: var(--gray) !important;
+        }
+        
+        .table th, .table td {
+            background: transparent !important;
+        }
+        
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: rgba(0,245,212,0.03);
+        }
+        
+        .trend-indicator {
+            font-size: 1rem;
+        }
+        
+        .btn-primary, .filter-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--dark) !important;
+            border: none;
+        }
+        
+        .btn-primary:hover, .filter-btn.active:hover {
+            color: var(--light) !important;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+        
+        .btn-outline-light, .filter-btn {
+            color: var(--light) !important;
+            border: 2px solid var(--card-border);
+        }
+        
+        .btn-outline-light:hover, .filter-btn:hover {
+            background: rgba(0,245,212,0.08);
+            color: var(--primary) !important;
+            border-color: var(--primary);
+        }
+        
+        .action-btn.selected {
+            background: var(--highlight);
+            color: var(--dark) !important;
+        }
+        
+        .stock-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--dark);
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            color: var(--light);
+            border-radius: 1.5rem;
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--card-border);
+        }
+        
+        .pie-chart-container, .performance-chart-container {
+            background: rgba(0,0,0,0.08);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--dark);
+            border-radius: 0.5rem;
+            padding: 0.2rem 0.7rem;
+            font-size: 0.85rem;
+            margin-right: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="d-flex align-items-center mb-5">
+            <div class="stock-icon">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <h4 class="mb-0">StockSentiment</h4>
+        </div>
+        
+        <nav class="nav flex-column">
+            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-speedometer2 me-3"></i> Dashboard
+            </a>
+            <a class="nav-link active" href="{{ url_for('portfolio') }}">
+                <i class="bi bi-briefcase me-3"></i> Portfolio
+            </a>
+            <a class="nav-link" href="#">
+                <i class="bi bi-graph-up me-3"></i> Market Analysis
+            </a>
+            <a class="nav-link" href="#">
+                <i class="bi bi-bell me-3"></i> Alerts
+            </a>
+            <a class="nav-link" href="#">
+                <i class="bi bi-gear me-3"></i> Settings
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h1 class="page-title">Your Portfolio</h1>
+                <p class="page-subtitle">Track and manage your investments</p>
+            </div>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-primary me-3">
+                    <i class="bi bi-plus-lg me-2"></i>Add Position
+                </button>
+                <button class="btn btn-outline-light">
+                    <i class="bi bi-download me-2"></i>Export
+                </button>
+            </div>
+        </div>
+
+        <!-- Portfolio Summary -->
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Total Value</h6>
+                        <div class="portfolio-value">${{ "{:,.2f}".format(portfolio|sum(attribute='current_value')) }}</div>
+                        <div class="trend-indicator trend-up mt-3">
+                            <i class="bi bi-arrow-up-right me-2"></i>
+                            +2.5% Today
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Total Gain/Loss</h6>
+                        <div class="d-flex align-items-center">
+                            <span class="portfolio-value">${{ "{:,.2f}".format(portfolio|sum(attribute='gain_loss')) }}</span>
+                            <div class="trend-indicator {{ 'trend-up' if portfolio|sum(attribute='gain_loss') > 0 else 'trend-down' }} ms-3">
+                                <i class="bi bi-arrow-{{ 'up' if portfolio|sum(attribute='gain_loss') > 0 else 'down' }}-right me-2"></i>
+                                {{ "{:+.2f}%".format(portfolio|sum(attribute='gain_loss_percent')) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Number of Positions</h6>
+                        <div class="portfolio-value">{{ portfolio|length }}</div>
+                        <div class="text-muted mt-3">Active holdings</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Insights Row -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Largest Holding</h6>
+                        {% set largest = portfolio|max(attribute='current_value') %}
+                        <div class="h4 mb-1">{{ largest.ticker }} - ${{ "{:,.2f}".format(largest.current_value) }}</div>
+                        <div class="text-muted">{{ largest.name }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Best Performer</h6>
+                        {% set best = portfolio|max(attribute='gain_loss_percent') %}
+                        <div class="h4 mb-1">{{ best.ticker }} ({{ "{:+.2f}%".format(best.gain_loss_percent) }})</div>
+                        <div class="text-muted">{{ best.name }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Worst Performer</h6>
+                        {% set worst = portfolio|min(attribute='gain_loss_percent') %}
+                        <div class="h4 mb-1">{{ worst.ticker }} ({{ "{:+.2f}%".format(worst.gain_loss_percent) }})</div>
+                        <div class="text-muted">{{ worst.name }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add the following inside the main-content div, after the summary cards -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="pie-chart-container">
+                    <h6 class="mb-3">Portfolio Allocation</h6>
+                    <div id="pie-chart" style="height:300px;"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="performance-chart-container">
+                    <h6 class="mb-3">Performance Over Time</h6>
+                    <div id="performance-chart" style="height:300px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add filter and sort options above the holdings table -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="btn-group">
+                <button class="btn filter-btn active">All</button>
+                <button class="btn filter-btn">Gainers</button>
+                <button class="btn filter-btn">Losers</button>
+                <button class="btn filter-btn">Tech</button>
+                <button class="btn filter-btn">Finance</button>
+                <button class="btn filter-btn">Energy</button>
+            </div>
+            <div class="d-flex align-items-center">
+                <select class="form-select me-2" style="width:180px;">
+                    <option>Sort by</option>
+                    <option>Gain/Loss</option>
+                    <option>Value</option>
+                    <option>Ticker</option>
+                </select>
+                <button class="btn btn-outline-light me-2">Export CSV</button>
+                <button class="btn btn-outline-light">Export Excel</button>
+            </div>
+        </div>
+
+        <!-- Holdings Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Holdings</h5>
+                <div class="btn-group">
+                    <button class="btn filter-btn active">All</button>
+                    <button class="btn filter-btn">Gainers</button>
+                    <button class="btn filter-btn">Losers</button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Shares</th>
+                                <th>Avg. Price</th>
+                                <th>Current Price</th>
+                                <th>Current Value</th>
+                                <th>Gain/Loss</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for position in portfolio %}
+                            <tr class="holding-row">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="stock-icon">
+                                            <i class="bi bi-graph-up-arrow"></i>
+                                        </div>
+                                        <div>
+                                            <strong>{{ position.ticker }}</strong>
+                                            <div class="text-muted">{{ position.name }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ position.shares }}</td>
+                                <td>${{ "{:.2f}".format(position.avg_price) }}</td>
+                                <td>${{ "{:.2f}".format(position.current_price) }}</td>
+                                <td>${{ "{:,.2f}".format(position.current_value) }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="{{ 'positive' if position.gain_loss > 0 else 'negative' }}">
+                                            ${{ "{:,.2f}".format(position.gain_loss) }}
+                                        </span>
+                                        <div class="trend-indicator {{ 'trend-up' if position.gain_loss > 0 else 'trend-down' }} ms-3">
+                                            <i class="bi bi-arrow-{{ 'up' if position.gain_loss > 0 else 'down' }}-right me-2"></i>
+                                            {{ "{:+.2f}%".format(position.gain_loss_percent) }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('analyze', ticker=position.ticker) }}" class="btn btn-outline-light action-btn" title="Analyze">
+                                        <i class="bi bi-graph-up"></i>
+                                    </a>
+                                    <button class="btn btn-outline-light action-btn" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light action-btn" title="Sell">
+                                        <i class="bi bi-cash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add modals for Add, Edit, Delete Position -->
+    <div class="modal fade" id="addPositionModal" tabindex="-1" aria-labelledby="addPositionModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addPositionModalLabel">Add Position</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addPositionForm">
+              <div class="mb-3">
+                <label for="addTicker" class="form-label">Ticker</label>
+                <input type="text" class="form-control" id="addTicker" required>
+              </div>
+              <div class="mb-3">
+                <label for="addShares" class="form-label">Shares</label>
+                <input type="number" class="form-control" id="addShares" required>
+              </div>
+              <div class="mb-3">
+                <label for="addPrice" class="form-label">Avg. Price</label>
+                <input type="number" class="form-control" id="addPrice" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Add Position</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="editPositionModal" tabindex="-1" aria-labelledby="editPositionModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editPositionModalLabel">Edit Position</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="editPositionForm">
+              <div class="mb-3">
+                <label for="editTicker" class="form-label">Ticker</label>
+                <input type="text" class="form-control" id="editTicker" required>
+              </div>
+              <div class="mb-3">
+                <label for="editShares" class="form-label">Shares</label>
+                <input type="number" class="form-control" id="editShares" required>
+              </div>
+              <div class="mb-3">
+                <label for="editPrice" class="form-label">Avg. Price</label>
+                <input type="number" class="form-control" id="editPrice" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="deletePositionModal" tabindex="-1" aria-labelledby="deletePositionModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deletePositionModalLabel">Delete Position</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete this position?</p>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Add Position button
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-primary').forEach(btn => {
+          if (btn.textContent.includes('Add Position')) {
+            btn.setAttribute('data-bs-toggle', 'modal');
+            btn.setAttribute('data-bs-target', '#addPositionModal');
+          }
+        });
+        // Edit buttons
+        document.querySelectorAll('.action-btn[title="Edit"]').forEach(btn => {
+          btn.addEventListener('click', function() {
+            document.getElementById('editTicker').value = 'AAPL'; // mock
+            document.getElementById('editShares').value = 10;
+            document.getElementById('editPrice').value = 175.50;
+            var modal = new bootstrap.Modal(document.getElementById('editPositionModal'));
+            modal.show();
+          });
+        });
+        // Sell/Delete buttons
+        document.querySelectorAll('.action-btn[title="Sell"]').forEach(btn => {
+          btn.addEventListener('click', function() {
+            var modal = new bootstrap.Modal(document.getElementById('deletePositionModal'));
+            modal.show();
+          });
+        });
+        // Export buttons
+        document.querySelectorAll('.btn-outline-light').forEach(btn => {
+          if (btn.textContent.includes('Export CSV')) {
+            btn.addEventListener('click', function() {
+              const csv = 'Ticker,Shares,Avg. Price\nAAPL,10,175.50\nGOOGL,5,142.75';
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.setAttribute('href', url);
+              a.setAttribute('download', 'portfolio.csv');
+              a.click();
+              window.URL.revokeObjectURL(url);
+            });
+          }
+          if (btn.textContent.includes('Export Excel')) {
+            btn.addEventListener('click', function() {
+              alert('Excel export coming soon!');
+            });
+          }
+        });
+        // Bulk actions (mock)
+        // Add checkboxes to each row and a master checkbox
+        document.querySelectorAll('.holding-row').forEach(row => {
+          row.addEventListener('click', function() {
+            row.classList.toggle('selected');
+          });
+        });
+        // Filter and sort buttons (mock)
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            alert('Filter applied: ' + btn.textContent);
+          });
+        });
+        document.querySelector('.form-select').addEventListener('change', function(e) {
+          alert('Sorted by: ' + e.target.value);
+        });
+      });
+      // Add/Edit/Delete form submits (mock)
+      document.addEventListener('submit', function(e) {
+        if (e.target && e.target.id === 'addPositionForm') {
+          e.preventDefault();
+          alert('Position added (mock)!');
+          var modal = bootstrap.Modal.getInstance(document.getElementById('addPositionModal'));
+          modal.hide();
+        }
+        if (e.target && e.target.id === 'editPositionForm') {
+          e.preventDefault();
+          alert('Position updated (mock)!');
+          var modal = bootstrap.Modal.getInstance(document.getElementById('editPositionModal'));
+          modal.hide();
+        }
+      });
+      // Confirm delete (mock)
+      document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        alert('Position deleted (mock)!');
+        var modal = bootstrap.Modal.getInstance(document.getElementById('deletePositionModal'));
+        modal.hide();
+      });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        // Example data for pie chart and performance chart
+        var pieData = [{
+            values: [40, 30, 20, 10],
+            labels: ['AAPL', 'GOOGL', 'MSFT', 'AMZN'],
+            type: 'pie',
+            marker: {colors: ['#00f5d4','#7209b7','#ff4d6d','#bfc9d1']}
+        }];
+        var pieLayout = {height: 300, width: 300, paper_bgcolor:'rgba(0,0,0,0)', font:{color:'#fff'}};
+        Plotly.newPlot('pie-chart', pieData, pieLayout, {displayModeBar: false});
+        var perfData = [{
+            x: ['2024-05-01','2024-05-02','2024-05-03','2024-05-04'],
+            y: [50000, 51000, 52000, 53206],
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: {color: '#00f5d4', width: 4}
+        }];
+        var perfLayout = {height: 300, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', font:{color:'#fff'}};
+        Plotly.newPlot('performance-chart', perfData, perfLayout, {displayModeBar: false});
+    </script>
+</body>
+</html> 

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis - {{ ticker }} - Stock Sentiment Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --primary: #00f5d4;
+            --secondary: #7209b7;
+            --dark: #1a1b1e;
+            --darker: #141517;
+            --light: #ffffff;
+            --gray: #8b8b8b;
+            --success: #00f5d4;
+            --danger: #ff4d6d;
+            --card-bg: rgba(26, 27, 30, 0.8);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+        
+        body {
+            background: var(--darker);
+            color: var(--light);
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(0, 245, 212, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(114, 9, 183, 0.1) 0%, transparent 50%);
+        }
+        
+        .sidebar {
+            background: var(--dark);
+            border-right: 1px solid var(--card-border);
+            height: 100vh;
+            position: fixed;
+            width: 280px;
+            padding: 2rem;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 245, 212, 0.1);
+            border-color: var(--primary);
+        }
+        
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--card-border);
+            padding: 1.5rem;
+        }
+        
+        .positive {
+            color: var(--success);
+        }
+        
+        .negative {
+            color: var(--danger);
+        }
+        
+        .nav-link {
+            color: var(--gray);
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--light);
+            background: linear-gradient(135deg, rgba(0, 245, 212, 0.1), rgba(114, 9, 183, 0.1));
+            transform: translateX(5px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 245, 212, 0.2);
+        }
+        
+        .btn-outline-light {
+            border: 2px solid var(--card-border);
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .btn-outline-light:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .trend-up {
+            background: rgba(0, 245, 212, 0.1);
+            color: var(--success);
+        }
+        
+        .trend-down {
+            background: rgba(255, 77, 109, 0.1);
+            color: var(--danger);
+        }
+        
+        .stock-price {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .news-item {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--card-border);
+            transition: all 0.3s ease;
+        }
+        
+        .news-item:hover {
+            background: rgba(0, 245, 212, 0.05);
+            transform: translateX(5px);
+        }
+        
+        .news-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sentiment-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            box-shadow: 0 0 8px currentColor;
+        }
+        
+        .sentiment-positive {
+            background: var(--success);
+        }
+        
+        .sentiment-negative {
+            background: var(--danger);
+        }
+        
+        .sentiment-neutral {
+            background: var(--gray);
+        }
+        
+        .chart-container {
+            height: 400px;
+            margin-top: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .time-filter {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .time-filter button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid var(--card-border);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .time-filter button.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--light);
+            border: none;
+        }
+        
+        .time-filter button:not(.active):hover {
+            background: rgba(0, 245, 212, 0.1);
+            border-color: var(--primary);
+        }
+        
+        .summary-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            opacity: 0.1;
+            z-index: 0;
+        }
+        
+        .summary-card .card-body {
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+        }
+        
+        .stock-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.5rem;
+            color: var(--light);
+            font-size: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 245, 212, 0.3);
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .page-subtitle {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="d-flex align-items-center mb-5">
+            <div class="stock-icon">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <h4 class="mb-0">StockSentiment</h4>
+        </div>
+        
+        <nav class="nav flex-column">
+            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-speedometer2 me-3"></i> Dashboard
+            </a>
+            <a class="nav-link" href="{{ url_for('portfolio') }}">
+                <i class="bi bi-briefcase me-3"></i> Portfolio
+            </a>
+            <a class="nav-link active" href="#">
+                <i class="bi bi-graph-up me-3"></i> Market Analysis
+            </a>
+            <a class="nav-link" href="#">
+                <i class="bi bi-bell me-3"></i> Alerts
+            </a>
+            <a class="nav-link" href="#">
+                <i class="bi bi-gear me-3"></i> Settings
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div class="d-flex align-items-center">
+                <div class="stock-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div>
+                    <h1 class="page-title">{{ stock.name }} ({{ ticker }})</h1>
+                    <p class="page-subtitle">Stock Analysis & Sentiment</p>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-primary me-3">
+                    <i class="bi bi-plus-lg me-2"></i>Add to Portfolio
+                </button>
+                <button class="btn btn-outline-light">
+                    <i class="bi bi-bell me-2"></i>Set Alert
+                </button>
+            </div>
+        </div>
+
+        <!-- Stock Overview -->
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Current Price</h6>
+                        <div class="stock-price">${{ "{:.2f}".format(stock.price) }}</div>
+                        <div class="trend-indicator {{ 'trend-up' if stock.change > 0 else 'trend-down' }} mt-3">
+                            <i class="bi bi-arrow-{{ 'up' if stock.change > 0 else 'down' }}-right me-2"></i>
+                            {{ "{:+.2f}%".format(stock.change) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Market Cap</h6>
+                        <div class="stock-price">{{ stock.market_cap }}</div>
+                        <div class="text-muted mt-3">{{ stock.sector }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Volume</h6>
+                        <div class="stock-price">{{ "{:,}".format(stock.volume) }}</div>
+                        <div class="text-muted mt-3">Shares traded today</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Chart -->
+        <div class="card mb-5">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Price History</h5>
+                <div class="time-filter">
+                    <button class="btn btn-outline-light btn-sm active">1D</button>
+                    <button class="btn btn-outline-light btn-sm">1W</button>
+                    <button class="btn btn-outline-light btn-sm">1M</button>
+                    <button class="btn btn-outline-light btn-sm">1Y</button>
+                    <button class="btn btn-outline-light btn-sm">All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="price-chart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- Sentiment Analysis -->
+        <div class="card mb-5">
+            <div class="card-header">
+                <h5 class="mb-0">Sentiment Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div id="sentiment-chart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- Recent News -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent News</h5>
+                <button class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                </button>
+            </div>
+            <div class="card-body p-0">
+                {% for article in news %}
+                <div class="news-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">
+                                <span class="sentiment-indicator sentiment-{{ article.sentiment }}"></span>
+                                {{ article.title }}
+                            </h6>
+                            <p class="text-muted mb-0">{{ article.source }} • {{ article.date }}</p>
+                        </div>
+                        <a href="{{ article.url }}" target="_blank" class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script id="sentiment-chart-data" type="application/json">
+        {{ sentiment_chart|tojson|safe }}
+    </script>
+    <script id="price-chart-data" type="application/json">
+        {{ price_chart|tojson|safe }}
+    </script>
+    <script>
+        // Parse and display the sentiment chart
+        var sentimentChart = JSON.parse(document.getElementById('sentiment-chart-data').textContent);
+        Plotly.newPlot('sentiment-chart', sentimentChart.data, sentimentChart.layout);
+
+        // Parse and display the price chart
+        var priceChart = JSON.parse(document.getElementById('price-chart-data').textContent);
+        Plotly.newPlot('price-chart', priceChart.data, priceChart.layout);
+    </script>
+</body>
+</html> 
